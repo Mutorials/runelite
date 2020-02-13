@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Alexsuperfly <https://github.com/Alexsuperfly>
+ * Copyright (c) 2020, Henry Darnell <hjdarnel@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,12 +22,23 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package net.runelite.client.plugins.wiki;
 
-package net.runelite.client.plugins.screenshot;
+import net.runelite.client.config.Config;
+import net.runelite.client.config.ConfigGroup;
+import net.runelite.client.config.ConfigItem;
 
-public enum UploadStyle
+@ConfigGroup(WikiPlugin.CONFIG_GROUP_KEY)
+public interface WikiConfig extends Config
 {
-	NEITHER,
-	IMGUR,
-	CLIPBOARD
+	@ConfigItem(
+		keyName = "leftClickSearch",
+		name = "Left Click Search",
+		description = "Swap left-click on the Wiki button to Search",
+		position = 1
+	)
+	default boolean leftClickSearch()
+	{
+		return false;
+	}
 }
