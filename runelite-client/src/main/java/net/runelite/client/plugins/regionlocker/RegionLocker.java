@@ -79,12 +79,11 @@ public class RegionLocker
 
 		regions.clear();
 
+		setRegions(StringToList(config.dropdownRegions().getRegions()), RegionTypes.UNLOCKED);
+
 		String unlockedString = config.unlockedRegions();
 		List<String> unlockedRegions = StringToList(unlockedString);
 		setRegions(unlockedRegions, RegionTypes.UNLOCKED);
-
-		if (config.showKaramja())
-			setRegions(StringToList(TrailblazerRegion.KARAMJA.getRegions()), RegionTypes.UNLOCKED);
 
 		String unlockableString = config.unlockableRegions();
 		List<String> unlockableRegions = StringToList(unlockableString);
