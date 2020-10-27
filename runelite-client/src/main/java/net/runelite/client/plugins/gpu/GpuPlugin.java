@@ -111,6 +111,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private static final int SMALL_TRIANGLE_COUNT = 512;
 	private static final int FLAG_SCENE_BUFFER = Integer.MIN_VALUE;
 	private static final int DEFAULT_DISTANCE = 25;
+	private static final int LOCKED_REGIONS_SIZE = 16;
 	static final int MAX_DISTANCE = 90;
 	static final int MAX_FOG_DEPTH = 100;
 
@@ -204,7 +205,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private final IntBuffer uniformBuffer = GpuIntBuffer.allocateDirect(5 + 3 + 2048 * 4);
 	private final float[] textureOffsets = new float[128];
 
-	private final int[] loadedLockedRegions = new int[12];
+	private final int[] loadedLockedRegions = new int[LOCKED_REGIONS_SIZE];
 
 	private GpuIntBuffer vertexBuffer;
 	private GpuFloatBuffer uvBuffer;
@@ -810,10 +811,13 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 	private boolean instanceRegionUnlocked()
 	{
-		for (int i = 0; i < client.getMapRegions().length; i++)
+		if (client.getMapRegions() != null && client.getMapRegions().length > 0 && client.getGameState() == GameState.LOGGED_IN)
 		{
-			int region = client.getMapRegions()[i];
-			if (RegionLocker.hasRegion(region)) return true;
+			for (int i = 0; i < client.getMapRegions().length; i++)
+			{
+				int region = client.getMapRegions()[i];
+				if (RegionLocker.hasRegion(region)) return true;
+			}
 		}
 		return false;
 	}
@@ -829,18 +833,21 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			loadedLockedRegions[i] = 0;
 		}
 
-		for (int i = 0; i < client.getMapRegions().length; i++)
+		if (client.getMapRegions() != null && client.getMapRegions().length > 0 && client.getGameState() == GameState.LOGGED_IN)
 		{
-			int region = client.getMapRegions()[i];
-			if (RegionLocker.hasRegion(region))
+			for (int i = 0; i < client.getMapRegions().length; i++)
 			{
-				loadedLockedRegions[i] = region;
+				int region = client.getMapRegions()[i];
+				if (RegionLocker.hasRegion(region))
+				{
+					loadedLockedRegions[i] = region;
+				}
 			}
 		}
 
 		gl.glUniform1i(uniBaseX, bx);
 		gl.glUniform1i(uniBaseY, by);
-		gl.glUniform1iv(uniLockedRegions, 12, loadedLockedRegions, 0);
+		gl.glUniform1iv(uniLockedRegions, LOCKED_REGIONS_SIZE, loadedLockedRegions, 0);
 	}
 
 	@Override
