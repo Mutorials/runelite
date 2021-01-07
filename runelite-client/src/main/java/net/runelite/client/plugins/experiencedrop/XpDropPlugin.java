@@ -28,6 +28,7 @@ import com.google.inject.Provides;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import javax.inject.Inject;
 import net.runelite.api.Client;
@@ -42,8 +43,6 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.widgets.Widget;
-import static net.runelite.api.widgets.WidgetInfo.TO_CHILD;
-import static net.runelite.api.widgets.WidgetInfo.TO_GROUP;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -67,7 +66,7 @@ public class XpDropPlugin extends Plugin
 	private boolean hasDropped = false;
 	private boolean correctPrayer;
 	private Skill lastSkill = null;
-	private Map<Skill, Integer> previousSkillExpTable = new EnumMap<>(Skill.class);
+	private final Map<Skill, Integer> previousSkillExpTable = new EnumMap<>(Skill.class);
 
 	@Provides
 	XpDropConfig provideConfig(ConfigManager configManager)
@@ -91,7 +90,7 @@ public class XpDropPlugin extends Plugin
 
 	private void processXpDrop(int widgetId)
 	{
-		final Widget xpdrop = client.getWidget(TO_GROUP(widgetId), TO_CHILD(widgetId));
+		final Widget xpdrop = client.getWidget(widgetId);
 		final Widget[] children = xpdrop.getChildren();
 		// child 0 is the xpdrop text, everything else are sprite ids for skills
 		final Widget text = children[0];
@@ -107,6 +106,7 @@ public class XpDropPlugin extends Plugin
 		final IntStream spriteIDs =
 			Arrays.stream(children)
 				.skip(1) // skip text
+				.filter(Objects::nonNull)
 				.mapToInt(Widget::getSpriteId);
 
 		int color = 0;

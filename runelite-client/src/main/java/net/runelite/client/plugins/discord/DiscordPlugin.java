@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import javax.imageio.ImageIO;
+import javax.inject.Named;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -46,7 +47,6 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.VarbitChanged;
-import net.runelite.client.RuneLiteProperties;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.discord.DiscordService;
 import net.runelite.client.discord.events.DiscordJoinGame;
@@ -106,7 +106,11 @@ public class DiscordPlugin extends Plugin
 	@Inject
 	private OkHttpClient okHttpClient;
 
-	private Map<Skill, Integer> skillExp = new HashMap<>();
+	@Inject
+	@Named("runelite.discord.invite")
+	private String discordInvite;
+
+	private final Map<Skill, Integer> skillExp = new HashMap<>();
 	private NavigationButton discordButton;
 	private boolean loginFlag;
 
@@ -125,10 +129,11 @@ public class DiscordPlugin extends Plugin
 			.tab(false)
 			.tooltip("Join Discord")
 			.icon(icon)
-			.onClick(() -> LinkBrowser.browse(RuneLiteProperties.getDiscordInvite()))
+			.onClick(() -> LinkBrowser.browse(discordInvite))
 			.build();
 
 		clientToolbar.addNavigation(discordButton);
+		resetState();
 		checkForGameStateUpdate();
 		checkForAreaUpdate();
 
@@ -144,7 +149,7 @@ public class DiscordPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		clientToolbar.removeNavigation(discordButton);
-		discordState.reset();
+		resetState();
 		partyService.changeParty(null);
 		wsClient.unregisterMessage(DiscordUserInfo.class);
 	}
@@ -155,6 +160,7 @@ public class DiscordPlugin extends Plugin
 		switch (event.getGameState())
 		{
 			case LOGIN_SCREEN:
+				resetState();
 				checkForGameStateUpdate();
 				return;
 			case LOGGING_IN:
@@ -164,9 +170,9 @@ public class DiscordPlugin extends Plugin
 				if (loginFlag)
 				{
 					loginFlag = false;
+					resetState();
 					checkForGameStateUpdate();
 				}
-
 				break;
 		}
 
@@ -178,6 +184,7 @@ public class DiscordPlugin extends Plugin
 	{
 		if (event.getGroup().equalsIgnoreCase("discord"))
 		{
+			resetState();
 			checkForGameStateUpdate();
 			checkForAreaUpdate();
 		}
@@ -288,7 +295,7 @@ public class DiscordPlugin extends Plugin
 			@Override
 			public void onResponse(Call call, Response response) throws IOException
 			{
-				try
+				try // NOPMD: UseTryWithResources
 				{
 					if (!response.isSuccessful())
 					{
@@ -362,10 +369,13 @@ public class DiscordPlugin extends Plugin
 		discordState.refresh();
 	}
 
+	private void resetState()
+	{
+		discordState.reset();
+	}
+
 	private void checkForGameStateUpdate()
 	{
-		// Game state update does also full reset of discord state
-		discordState.reset();
 		discordState.triggerEvent(client.getGameState() == GameState.LOGGED_IN
 			? DiscordGameEventType.IN_GAME
 			: DiscordGameEventType.IN_MENU);
