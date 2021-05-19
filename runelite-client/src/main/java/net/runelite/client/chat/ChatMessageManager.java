@@ -39,22 +39,23 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import net.runelite.api.ChatLineBuffer;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.MessageNode;
 import net.runelite.api.Player;
 import net.runelite.api.Varbits;
 import net.runelite.api.events.ChatMessage;
-import net.runelite.client.events.ConfigChanged;
 import net.runelite.api.events.ResizeableChanged;
 import net.runelite.api.events.ScriptCallbackEvent;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ChatColorConfig;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.ui.JagexColors;
 import net.runelite.client.util.ColorUtil;
+import net.runelite.client.util.Text;
 
 @Singleton
 public class ChatMessageManager
@@ -72,11 +73,14 @@ public class ChatMessageManager
 	private ChatMessageManager(
 		Client client,
 		ChatColorConfig chatColorConfig,
-		ClientThread clientThread)
+		ClientThread clientThread,
+		EventBus eventBus)
 	{
 		this.client = client;
 		this.chatColorConfig = chatColorConfig;
 		this.clientThread = clientThread;
+		eventBus.register(this);
+		loadColors();
 	}
 
 	@Subscribe
@@ -126,13 +130,17 @@ public class ChatMessageManager
 			case PUBLICCHAT:
 			case MODCHAT:
 			{
-				boolean isFriend = client.isFriended(chatMessage.getName(), true) && !client.getLocalPlayer().getName().equals(chatMessage.getName());
+				String sanitizedUsername = Text.removeTags(chatMessage.getName()).replace('\u00A0', ' ');
 
-				if (isFriend)
+				if (client.getLocalPlayer().getName().equals(sanitizedUsername))
+				{
+					usernameColor = isChatboxTransparent ? chatColorConfig.transparentPlayerUsername() : chatColorConfig.opaquePlayerUsername();
+				}
+				else if (client.isFriended(sanitizedUsername, true))
 				{
 					usernameColor = isChatboxTransparent ? chatColorConfig.transparentPublicFriendUsernames() : chatColorConfig.opaquePublicFriendUsernames();
 				}
-				if (usernameColor == null)
+				else
 				{
 					usernameColor = isChatboxTransparent ? chatColorConfig.transparentUsername() : chatColorConfig.opaqueUsername();
 				}
@@ -223,6 +231,7 @@ public class ChatMessageManager
 				case OBJECT_EXAMINE:
 				case NPC_EXAMINE:
 				case CONSOLE:
+				case FRIENDSCHATNOTIFICATION:
 					return JagexColors.CHAT_GAME_EXAMINE_TEXT_OPAQUE_BACKGROUND;
 			}
 		}
@@ -243,6 +252,7 @@ public class ChatMessageManager
 				case OBJECT_EXAMINE:
 				case NPC_EXAMINE:
 				case CONSOLE:
+				case FRIENDSCHATNOTIFICATION:
 					return JagexColors.CHAT_GAME_EXAMINE_TEXT_TRANSPARENT_BACKGROUND;
 			}
 		}
@@ -253,7 +263,7 @@ public class ChatMessageManager
 	/**
 	 * Load all configured colors
 	 */
-	public void loadColors()
+	private void loadColors()
 	{
 		colorCache.clear();
 
@@ -571,17 +581,14 @@ public class ChatMessageManager
 			return;
 		}
 
+		final String formattedMessage = formatRuneLiteMessage(message.getRuneLiteFormattedMessage(), message.getType());
+
 		// this updates chat cycle
-		client.addChatMessage(
+		final MessageNode line = client.addChatMessage(
 			message.getType(),
 			MoreObjects.firstNonNull(message.getName(), ""),
-			MoreObjects.firstNonNull(message.getValue(), message.getRuneLiteFormattedMessage()),
+			MoreObjects.firstNonNull(formattedMessage, message.getValue()),
 			message.getSender());
-
-		// Get last message from line buffer (the one we just added)
-		final ChatLineBuffer chatLineBuffer = client.getChatLineMap().get(message.getType().getType());
-		final MessageNode[] lines = chatLineBuffer.getLines();
-		final MessageNode line = lines[0];
 
 		// Update the message with RuneLite additions
 		line.setRuneLiteFormatMessage(message.getRuneLiteFormattedMessage());
@@ -590,34 +597,38 @@ public class ChatMessageManager
 		{
 			line.setTimestamp(message.getTimestamp());
 		}
-
-		update(line);
 	}
 
-	public void update(final MessageNode target)
+	/**
+	 * Rebuild the message node message from the RuneLite format message
+	 *
+	 * @param messageNode message node
+	 */
+	public void update(final MessageNode messageNode)
 	{
-		if (Strings.isNullOrEmpty(target.getRuneLiteFormatMessage()))
+		String message = formatRuneLiteMessage(messageNode.getRuneLiteFormatMessage(), messageNode.getType());
+		if (message != null)
 		{
-			return;
+			messageNode.setValue(message);
+		}
+	}
+
+	private String formatRuneLiteMessage(String runeLiteFormatMessage, ChatMessageType type)
+	{
+		if (Strings.isNullOrEmpty(runeLiteFormatMessage))
+		{
+			return null;
 		}
 
 		final boolean transparent = client.isResized() && transparencyVarbit != 0;
-		final Collection<ChatColor> chatColors = colorCache.get(target.getType());
+		final Collection<ChatColor> chatColors = colorCache.get(type);
 
-		// If we do not have any colors cached, simply set clean message
 		if (chatColors == null || chatColors.isEmpty())
 		{
-			target.setValue(target.getRuneLiteFormatMessage());
-			return;
+			return runeLiteFormatMessage;
 		}
 
-		target.setValue(recolorMessage(transparent, target.getRuneLiteFormatMessage(), target.getType()));
-	}
-
-	private String recolorMessage(boolean transparent, String message, ChatMessageType messageType)
-	{
-		final Collection<ChatColor> chatColors = colorCache.get(messageType);
-		final AtomicReference<String> resultMessage = new AtomicReference<>(message);
+		final AtomicReference<String> resultMessage = new AtomicReference<>(runeLiteFormatMessage);
 
 		// Replace custom formatting with actual colors
 		chatColors.stream()

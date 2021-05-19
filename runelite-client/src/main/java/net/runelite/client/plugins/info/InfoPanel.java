@@ -114,12 +114,12 @@ public class InfoPanel extends PluginPanel
 
 	static
 	{
-		ARROW_RIGHT_ICON = new ImageIcon(ImageUtil.getResourceStreamFromClass(InfoPanel.class, "/util/arrow_right.png"));
-		GITHUB_ICON = new ImageIcon(ImageUtil.getResourceStreamFromClass(InfoPanel.class, "github_icon.png"));
-		DISCORD_ICON = new ImageIcon(ImageUtil.getResourceStreamFromClass(InfoPanel.class, "discord_icon.png"));
-		PATREON_ICON = new ImageIcon(ImageUtil.getResourceStreamFromClass(InfoPanel.class, "patreon_icon.png"));
-		WIKI_ICON = new ImageIcon(ImageUtil.getResourceStreamFromClass(InfoPanel.class, "wiki_icon.png"));
-		IMPORT_ICON = new ImageIcon(ImageUtil.getResourceStreamFromClass(InfoPanel.class, "import_icon.png"));
+		ARROW_RIGHT_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "/util/arrow_right.png"));
+		GITHUB_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "github_icon.png"));
+		DISCORD_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "discord_icon.png"));
+		PATREON_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "patreon_icon.png"));
+		WIKI_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "wiki_icon.png"));
+		IMPORT_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "import_icon.png"));
 	}
 
 	void init()
@@ -181,10 +181,10 @@ public class InfoPanel extends PluginPanel
 		actionsContainer.setBorder(new EmptyBorder(10, 0, 0, 0));
 		actionsContainer.setLayout(new GridLayout(0, 1, 0, 10));
 
-		syncPanel = buildLinkPanel(IMPORT_ICON, "Import local settings", "to remote RuneLite account", () ->
+		syncPanel = buildLinkPanel(IMPORT_ICON, "Import signed-out", "settings", () ->
 		{
 			final int result = JOptionPane.showOptionDialog(syncPanel,
-				"This will replace your current RuneLite account settings with settings from your local profile.",
+				"<html>This will overwrite your settings with settings from your local profile, which<br/>is the profile used when not logged into RuneLite with a RuneLite account.</html>",
 				"Are you sure?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
 				null, new String[]{"Yes", "No"}, "No");
 

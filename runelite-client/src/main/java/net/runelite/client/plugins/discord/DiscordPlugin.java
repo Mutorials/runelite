@@ -46,7 +46,6 @@ import net.runelite.api.WorldType;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.StatChanged;
-import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.discord.DiscordService;
 import net.runelite.client.discord.events.DiscordJoinGame;
@@ -123,7 +122,7 @@ public class DiscordPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "discord.png");
+		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "discord.png");
 
 		discordButton = NavigationButton.builder()
 			.tab(false)
@@ -173,10 +172,9 @@ public class DiscordPlugin extends Plugin
 					resetState();
 					checkForGameStateUpdate();
 				}
+				checkForAreaUpdate();
 				break;
 		}
-
-		checkForAreaUpdate();
 	}
 
 	@Subscribe
@@ -205,22 +203,6 @@ public class DiscordPlugin extends Plugin
 		final DiscordGameEventType discordGameEventType = DiscordGameEventType.fromSkill(skill);
 
 		if (discordGameEventType != null && config.showSkillingActivity())
-		{
-			discordState.triggerEvent(discordGameEventType);
-		}
-	}
-
-	@Subscribe
-	public void onVarbitChanged(VarbitChanged event)
-	{
-		if (!config.showRaidingActivity())
-		{
-			return;
-		}
-
-		final DiscordGameEventType discordGameEventType = DiscordGameEventType.fromVarbit(client);
-
-		if (discordGameEventType != null)
 		{
 			discordState.triggerEvent(discordGameEventType);
 		}
@@ -376,9 +358,14 @@ public class DiscordPlugin extends Plugin
 
 	private void checkForGameStateUpdate()
 	{
-		discordState.triggerEvent(client.getGameState() == GameState.LOGGED_IN
-			? DiscordGameEventType.IN_GAME
-			: DiscordGameEventType.IN_MENU);
+		final boolean isLoggedIn = client.getGameState() == GameState.LOGGED_IN;
+
+		if (config.showMainMenu() || isLoggedIn)
+		{
+			discordState.triggerEvent(isLoggedIn
+					? DiscordGameEventType.IN_GAME
+					: DiscordGameEventType.IN_MENU);
+		}
 	}
 
 	private void checkForAreaUpdate()
@@ -447,6 +434,7 @@ public class DiscordPlugin extends Plugin
 			case DUNGEONS: return config.showDungeonActivity();
 			case MINIGAMES: return config.showMinigameActivity();
 			case REGIONS: return config.showRegionsActivity();
+			case RAIDS: return config.showRaidingActivity();
 		}
 
 		return false;

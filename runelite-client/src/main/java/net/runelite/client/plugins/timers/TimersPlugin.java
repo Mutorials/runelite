@@ -39,6 +39,7 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.EquipmentInventorySlot;
+import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
@@ -48,11 +49,13 @@ import static net.runelite.api.ItemID.INFERNAL_CAPE;
 import net.runelite.api.NPC;
 import net.runelite.api.NpcID;
 import net.runelite.api.Player;
+import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.AnimationChanged;
+import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -89,6 +92,7 @@ public class TimersPlugin extends Plugin
 	private static final String CANNON_FURNACE_MESSAGE = "You add the furnace.";
 	private static final String CANNON_PICKUP_MESSAGE = "You pick up the cannon. It's really heavy.";
 	private static final String CANNON_REPAIR_MESSAGE = "You repair your cannon, restoring it to working order.";
+	private static final String CANNON_DESTROYED_MESSAGE = "Your cannon has been destroyed!";
 	private static final String CHARGE_EXPIRED_MESSAGE = "<col=ef1020>Your magical charge fades away.</col>";
 	private static final String CHARGE_MESSAGE = "<col=ef1020>You feel charged with magic power.</col>";
 	private static final String EXTENDED_ANTIFIRE_DRINK_MESSAGE = "You drink some of your extended antifire potion.";
@@ -140,6 +144,8 @@ public class TimersPlugin extends Plugin
 	private int lastAnimation;
 	private boolean widgetHiddenChangedOnPvpWorld;
 	private ElapsedTimer tzhaarTimer;
+	private int imbuedHeartClickTick = -1;
+	private int lastBoostedMagicLevel = -1;
 
 	@Inject
 	private ItemManager itemManager;
@@ -163,6 +169,15 @@ public class TimersPlugin extends Plugin
 	}
 
 	@Override
+	public void startUp()
+	{
+		if (client.getGameState() == GameState.LOGGED_IN)
+		{
+			lastBoostedMagicLevel = client.getBoostedSkillLevel(Skill.MAGIC);
+		}
+	}
+
+	@Override
 	protected void shutDown() throws Exception
 	{
 		infoBoxManager.removeIf(t -> t instanceof TimerTimer);
@@ -175,6 +190,8 @@ public class TimersPlugin extends Plugin
 		nextPoisonTick = 0;
 		removeTzhaarTimer();
 		staminaTimer = null;
+		imbuedHeartClickTick = -1;
+		lastBoostedMagicLevel = -1;
 	}
 
 	@Subscribe
@@ -434,6 +451,12 @@ public class TimersPlugin extends Plugin
 			return;
 		}
 
+		if (event.getMenuOption().contains("Invigorate")
+			&& event.getId() == ItemID.IMBUED_HEART)
+		{
+			imbuedHeartClickTick = client.getTickCount();
+		}
+
 		TeleportWidget teleportWidget = TeleportWidget.of(event.getWidgetId());
 		if (teleportWidget != null)
 		{
@@ -517,7 +540,7 @@ public class TimersPlugin extends Plugin
 			cannonTimer.setTooltip(cannonTimer.getTooltip() + " - World " + client.getWorld());
 		}
 
-		if (config.showCannon() && message.equals(CANNON_PICKUP_MESSAGE))
+		if (config.showCannon() && (message.equals(CANNON_PICKUP_MESSAGE) || message.equals(CANNON_DESTROYED_MESSAGE)))
 		{
 			removeGameTimer(CANNON);
 		}
@@ -795,8 +818,10 @@ public class TimersPlugin extends Plugin
 					config.tzhaarLastTime(null);
 				}
 				break;
-			case HOPPING:
 			case LOGIN_SCREEN:
+				lastBoostedMagicLevel = -1;
+				// fall through
+			case HOPPING:
 				// pause tzhaar timer if logged out without pausing
 				if (config.tzhaarStartTime() != null && config.tzhaarLastTime() == null)
 				{
@@ -853,11 +878,6 @@ public class TimersPlugin extends Plugin
 		if (actor != client.getLocalPlayer())
 		{
 			return;
-		}
-
-		if (config.showImbuedHeart() && actor.getGraphic() == IMBUEDHEART.getGraphicId())
-		{
-			createGameTimer(IMBUEDHEART);
 		}
 
 		if (config.showFreezes())
@@ -975,6 +995,37 @@ public class TimersPlugin extends Plugin
 		{
 			infoBoxManager.removeIf(t -> t instanceof TimerTimer && ((TimerTimer) t).getTimer().isRemovedOnDeath());
 		}
+	}
+
+	@Subscribe
+	public void onStatChanged(StatChanged statChanged)
+	{
+		if (statChanged.getSkill() != Skill.MAGIC)
+		{
+			return;
+		}
+
+		final int boostedMagicLevel = statChanged.getBoostedLevel();
+
+		if (imbuedHeartClickTick < 0
+			|| client.getTickCount() > imbuedHeartClickTick + 3 // allow for 2 ticks of lag
+			|| !config.showImbuedHeart())
+		{
+			lastBoostedMagicLevel = boostedMagicLevel;
+			return;
+		}
+
+		final int boostAmount = boostedMagicLevel - statChanged.getLevel();
+		final int boostChange = boostedMagicLevel - lastBoostedMagicLevel;
+		final int heartBoost = 1 + (statChanged.getLevel() / 10);
+
+		if ((boostAmount == heartBoost || (lastBoostedMagicLevel != -1 && boostChange == heartBoost))
+			&& boostChange > 0)
+		{
+			createGameTimer(IMBUEDHEART);
+		}
+
+		lastBoostedMagicLevel = boostedMagicLevel;
 	}
 
 	private void createStaminaTimer()

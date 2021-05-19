@@ -143,6 +143,7 @@ public class DevToolsPlugin extends Plugin
 	private DevToolsButton soundEffects;
 	private DevToolsButton scriptInspector;
 	private DevToolsButton inventoryInspector;
+	private DevToolsButton shell;
 	private NavigationButton navButton;
 
 	@Provides
@@ -187,6 +188,7 @@ public class DevToolsPlugin extends Plugin
 		soundEffects = new DevToolsButton("Sound Effects");
 		scriptInspector = new DevToolsButton("Script Inspector");
 		inventoryInspector = new DevToolsButton("Inventory Inspector");
+		shell = new DevToolsButton("Shell");
 
 		overlayManager.add(overlay);
 		overlayManager.add(locationOverlay);
@@ -198,7 +200,7 @@ public class DevToolsPlugin extends Plugin
 
 		final DevToolsPanel panel = injector.getInstance(DevToolsPanel.class);
 
-		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "devtools_icon.png");
+		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "devtools_icon.png");
 
 		navButton = NavigationButton.builder()
 			.tooltip("Developer Tools")
@@ -343,7 +345,7 @@ public class DevToolsPlugin extends Plugin
 				int id = Integer.parseInt(args[0]);
 				Player localPlayer = client.getLocalPlayer();
 				localPlayer.setAnimation(id);
-				localPlayer.setActionFrame(0);
+				localPlayer.setAnimationFrame(0);
 				break;
 			}
 			case "gfx":

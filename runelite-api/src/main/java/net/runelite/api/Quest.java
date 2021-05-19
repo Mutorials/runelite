@@ -31,12 +31,13 @@ import lombok.RequiredArgsConstructor;
 public enum Quest
 {
 	//Free Quests
+	BELOW_ICE_MOUNTAIN(2874, "Below Ice Mountain"),
 	BLACK_KNIGHTS_FORTRESS(299, "Black Knights' Fortress"),
 	COOKS_ASSISTANT(300, "Cook's Assistant"),
 	THE_CORSAIR_CURSE(301, "The Corsair Curse"),
 	DEMON_SLAYER(302, "Demon Slayer"),
 	DORICS_QUEST(303, "Doric's Quest"),
-	DRAGON_SLAYER(304, "Dragon Slayer"),
+	DRAGON_SLAYER_I(304, "Dragon Slayer I"),
 	ERNEST_THE_CHICKEN(305, "Ernest the Chicken"),
 	GOBLIN_DIPLOMACY(306, "Goblin Diplomacy"),
 	IMP_CATCHER(307, "Imp Catcher"),
@@ -133,7 +134,7 @@ public enum Quest
 	PLAGUE_CITY(407, "Plague City"),
 	PRIEST_IN_PERIL(408, "Priest in Peril"),
 	THE_QUEEN_OF_THIEVES(409, "The Queen of Thieves"),
-	RAG_AND_BONE_MAN(410, "Rag and Bone Man"),
+	RAG_AND_BONE_MAN_I(410, "Rag and Bone Man I"),
 	RAG_AND_BONE_MAN_II(411, "Rag and Bone Man II"),
 	RATCATCHERS(412, "Ratcatchers"),
 	RECIPE_FOR_DISASTER(413, "Recipe for Disaster"),
@@ -205,7 +206,7 @@ public enum Quest
 
 	public QuestState getState(Client client)
 	{
-		client.runScript(ScriptID.QUESTLIST_PROGRESS, id);
+		client.runScript(ScriptID.QUEST_STATUS_GET, id);
 		switch (client.getIntStack()[0])
 		{
 			case 2:

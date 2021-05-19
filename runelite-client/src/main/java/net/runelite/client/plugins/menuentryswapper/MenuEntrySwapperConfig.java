@@ -145,6 +145,17 @@ public interface MenuEntrySwapperConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "swapBattlestaves",
+		name = "Battlestaff",
+		description = "Swap Wield with Use on Battlestaves without orbs",
+		section = itemSection
+	)
+	default boolean swapBattlestaves()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "swapPrayerBook",
 		name = "Recite-Prayer",
 		description = "Swap Read with Recite-prayer on the Prayer Book from The Great Brain Robbery quest",
@@ -277,6 +288,17 @@ public interface MenuEntrySwapperConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "swapBait",
+		name = "Bait",
+		description = "Swap Lure, Small Net with Bait on Fishing spot",
+		section = objectSection
+	)
+	default boolean swapBait()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "swapHelp",
 		name = "Help",
 		description = "Swap Talk-to with Help on Arceuus library customers",
@@ -327,6 +349,17 @@ public interface MenuEntrySwapperConfig extends Config
 		section = objectSection
 	)
 	default boolean swapJewelleryBox()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "swapPortalNexus",
+		name = "Portal Nexus",
+		description =  "Swap Teleport options with Teleport Menu on the Portal Nexus",
+		section = objectSection
+	)
+	default boolean swapPortalNexus()
 	{
 		return false;
 	}
@@ -603,6 +636,39 @@ public interface MenuEntrySwapperConfig extends Config
 		section = npcSection
 	)
 	default boolean swapDepositItems()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "swapRockCake",
+		name = "Dwarven rock cake",
+		description = "Swap Eat with Guzzle on the Dwarven rock cake",
+		section = itemSection
+	)
+	default boolean swapRockCake()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "swapRowboatDive",
+		name = "Fossil Island Rowboat Dive",
+		description = "Swap Travel with Dive on the rowboat found on the small island north-east of Fossil Island",
+		section = objectSection
+	)
+	default boolean swapRowboatDive()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "swapTemporossLeave",
+		name = "Tempoross Leave",
+		description = "Swap Talk-to with Leave after subduing Tempoross",
+		section = npcSection
+	)
+	default boolean swapTemporossLeave()
 	{
 		return false;
 	}

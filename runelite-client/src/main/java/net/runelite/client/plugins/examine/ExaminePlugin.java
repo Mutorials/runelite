@@ -68,8 +68,8 @@ import okhttp3.OkHttpClient;
  */
 @PluginDescriptor(
 	name = "Examine",
-	description = "Send examine information to the API",
-	tags = {"npcs", "items", "inventory", "objects"}
+	description = "Shows additional examine information (eg. GE Average, HA Value)",
+	tags = {"npcs", "items", "inventory", "objects", "prices", "high alchemy"}
 )
 @Slf4j
 public class ExaminePlugin extends Plugin
@@ -314,7 +314,7 @@ public class ExaminePlugin extends Plugin
 				return new int[]{widgetItem.getItemQuantity(), widgetItem.getItemId()};
 			}
 		}
-		else if (WidgetInfo.SHOP_ITEMS_CONTAINER.getGroupId() == widgetGroup)
+		else if (WidgetID.SHOP_GROUP_ID == widgetGroup)
 		{
 			Widget widgetItem = widget.getChild(actionParam);
 			if (widgetItem != null)

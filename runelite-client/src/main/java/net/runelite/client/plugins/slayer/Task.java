@@ -201,6 +201,7 @@ enum Task
 		"Fremennik Slayer Dungeon",
 		"God Wars Dungeon",
 		"Iorwerth Dungeon",
+		"Isle of Souls",
 		"Jormungand's Prison",
 		"Kalphite Lair",
 		"Karuulm Slayer Dungeon",

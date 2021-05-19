@@ -45,7 +45,7 @@ public interface AgilityConfig extends Config
 	@ConfigItem(
 		keyName = "showClickboxes",
 		name = "Show Clickboxes",
-		description = "Show agility course obstacle clickboxes",
+		description = "Show agility course and other obstacle clickboxes",
 		position = 0
 	)
 	default boolean showClickboxes()
@@ -147,7 +147,7 @@ public interface AgilityConfig extends Config
 	@Alpha
 	@ConfigItem(
 		keyName = "portalsHighlight",
-		name = "Portals Highlight Color",
+		name = "Portals Color",
 		description = "Color of highlighted Prifddinas portals",
 		position = 9
 	)
